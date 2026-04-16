@@ -62,6 +62,5 @@ class Status(commands.Cog):
         except Exception as e:
             print(f"Erro ao atualizar status: {e}")
 
-# Correção da função setup para evitar o erro de 'Awaited' que apareceu no seu terminal
-async def setup(bot): 
+async def setup(bot):
     await bot.add_cog(Status(bot))

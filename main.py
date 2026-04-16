@@ -3,7 +3,6 @@ from discord.ext import commands
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env
 load_dotenv()
 
 class MyBot(commands.Bot):
@@ -21,12 +20,11 @@ class MyBot(commands.Bot):
                     print(f'❌ Erro ao carregar {filename}: {e}')
         
         # Importar views para persistência
-        # Nota: Certifique-se que esses módulos existam em ./cogs/
         from cogs.tickets import TicketView, ConfirmCloseView
         from cogs.whitelist import WhitelistView
         from cogs.verificacao import VerificacaoView
         
-        # Adicionar Views persistentes
+        # Adicionar Views persistentes (para os botões não pararem de funcionar)
         self.add_view(TicketView(self))
         self.add_view(ConfirmCloseView(self))
         self.add_view(WhitelistView())
@@ -41,10 +39,8 @@ bot = MyBot()
 async def on_ready():
     print(f'--- {bot.user} ESTÁ ONLINE ---')
 
-# Busca o token da variável de ambiente DISCORD_TOKEN
 TOKEN = os.getenv('DISCORD_TOKEN')
-
 if TOKEN:
     bot.run(TOKEN)
 else:
-    print("❌ ERRO: DISCORD_TOKEN não encontrado no arquivo .env")
+    print("❌ ERRO: DISCORD_TOKEN não encontrado no .env")

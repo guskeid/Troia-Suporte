@@ -186,4 +186,5 @@ class Whitelist(commands.Cog):
         
         await canal.send(embed=emb)
 
-async def setup(bot): await bot.add_cog(Whitelist(bot))
+async def setup(bot):
+    await bot.add_cog(Whitelist(bot))
