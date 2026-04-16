@@ -26,10 +26,17 @@ class Status(commands.Cog):
             color=0x2b2d31 # Cor grafite premium
         )
         
-        # Status do Servidor com destaque de cor
+# Status do Servidor - Alterado para Manutenção
         embed.add_field(
             name="🔌 Servidor", 
-            value="```diff\n+ ONLINE```", # Texto em verde
+            value="```diff\n- MANUTENÇÃO```", # O '-' deixa o texto vermelho no diff
+            inline=True
+        )
+        
+        # População
+        embed.add_field(
+            name="👥 Jogadores", 
+            value="```Aguardando Inauguração```", 
             inline=True
         )
         
