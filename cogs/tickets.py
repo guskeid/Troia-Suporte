@@ -12,6 +12,36 @@ class ConfirmCloseView(discord.ui.View):
         super().__init__(timeout=None)
         self.bot = bot
 
+    @discord.ui.button(label="Assumir Ticket", style=discord.ButtonStyle.primary, custom_id="btn_assumir_ticket", emoji="🙋")
+    async def assumir(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Verificação de permissão (Staff ou Admin)
+        role_staff = discord.utils.get(interaction.guild.roles, name=NOME_CARGO_STAFF)
+        is_staff = (role_staff in interaction.user.roles) if role_staff else False
+
+        if not is_staff and not interaction.user.guild_permissions.administrator:
+            return await interaction.response.send_message("❌ Apenas a equipe de suporte pode assumir este ticket!", ephemeral=True)
+
+        # Identifica o autor do ticket pelo tópico do canal
+        try:
+            user_id = int(interaction.channel.topic.split("ID: ")[1].rstrip(")"))
+            autor = interaction.guild.get_member(user_id)
+        except Exception:
+            autor = None
+
+        embed = discord.Embed(
+            title="🙋 Ticket Assumido",
+            description=f"{interaction.user.mention} assumiu este atendimento e responderá em breve.",
+            color=discord.Color.gold(),
+            timestamp=datetime.now()
+        )
+        embed.set_footer(text="Troia Roleplay - Suporte")
+        await interaction.response.send_message(embed=embed)
+
+        # Log de "Assumido"
+        wl_cog = self.bot.get_cog("Whitelist")
+        if wl_cog and autor:
+            await wl_cog.log_ticket(interaction, "Assumido", autor, f"Atendimento assumido por {interaction.user.name}.")
+
     @discord.ui.button(label="Finalizar Ticket", style=discord.ButtonStyle.red, custom_id="btn_fechar_ticket")
     async def fechar(self, interaction: discord.Interaction, button: discord.ui.Button):
         # Verificação de permissão (Staff ou Admin)

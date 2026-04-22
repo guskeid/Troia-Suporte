@@ -4,7 +4,7 @@ from discord.ext import commands
 
 # --- CONFIGURAÇÃO ---
 # Coloque aqui o ID do cargo que o jogador deve receber ao clicar no botão
-ID_CARGO_VERIFICADO = 000000000000000000 
+ID_CARGO_VERIFICADO = 1496640175646838824
 LINK_LOGO = "https://media.discordapp.net/attachments/1256047555435954291/1280596882405589093/Icon.png"
 
 class VerificacaoView(ui.View):

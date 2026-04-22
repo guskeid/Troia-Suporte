@@ -96,6 +96,90 @@ class ContratarStaffView(ui.View):
             pass
 
 
+class DemitirStaffView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=300)
+        self.usuario_selecionado: discord.Member | None = None
+        self.cargo_selecionado: str | None = None
+
+        opcoes = [
+            discord.SelectOption(label=cargo, value=cargo, emoji="❌")
+            for cargo in CARGOS_HIERARQUIA
+        ]
+        self.select_cargo.options = opcoes
+
+    @ui.select(cls=ui.UserSelect, placeholder="👤 Selecione o staff a ser demitido...", min_values=1, max_values=1)
+    async def select_user(self, interaction: discord.Interaction, select: ui.UserSelect):
+        membro = select.values[0]
+        if isinstance(membro, discord.Member):
+            self.usuario_selecionado = membro
+        else:
+            self.usuario_selecionado = interaction.guild.get_member(membro.id)
+        await interaction.response.defer()
+
+    @ui.select(placeholder="🔰 Selecione o cargo a ser removido...", min_values=1, max_values=1, options=[discord.SelectOption(label="placeholder")])
+    async def select_cargo(self, interaction: discord.Interaction, select: ui.Select):
+        self.cargo_selecionado = select.values[0]
+        await interaction.response.defer()
+
+    @ui.button(label="Confirmar Demissão", style=discord.ButtonStyle.danger, emoji="🗑️", row=2)
+    async def confirmar(self, interaction: discord.Interaction, button: ui.Button):
+        if not self.usuario_selecionado:
+            return await interaction.response.send_message("❌ Você precisa selecionar um usuário.", ephemeral=True)
+        if not self.cargo_selecionado:
+            return await interaction.response.send_message("❌ Você precisa selecionar um cargo.", ephemeral=True)
+
+        cargo = discord.utils.get(interaction.guild.roles, name=self.cargo_selecionado)
+        if not cargo:
+            return await interaction.response.send_message(
+                f"❌ O cargo `{self.cargo_selecionado}` não existe neste servidor.",
+                ephemeral=True
+            )
+
+        if cargo not in self.usuario_selecionado.roles:
+            return await interaction.response.send_message(
+                f"⚠️ {self.usuario_selecionado.mention} não possui o cargo {cargo.mention}.",
+                ephemeral=True
+            )
+
+        if cargo >= interaction.user.top_role and interaction.user.id != interaction.guild.owner_id:
+            return await interaction.response.send_message(
+                "❌ Você não pode remover um cargo igual ou superior ao seu.",
+                ephemeral=True
+            )
+
+        try:
+            await self.usuario_selecionado.remove_roles(cargo, reason=f"Demitido por {interaction.user}")
+        except discord.Forbidden:
+            return await interaction.response.send_message("❌ Não tenho permissão para remover este cargo.", ephemeral=True)
+        except Exception as e:
+            return await interaction.response.send_message(f"❌ Erro ao remover cargo: {e}", ephemeral=True)
+
+        embed = discord.Embed(
+            title="🗑️ Staff Demitido",
+            color=discord.Color.red(),
+            timestamp=datetime.now()
+        )
+        embed.add_field(name="👤 Membro:", value=self.usuario_selecionado.mention, inline=False)
+        embed.add_field(name="🔰 Cargo Removido:", value=cargo.mention, inline=False)
+        embed.add_field(name="👮 Demitido por:", value=interaction.user.mention, inline=False)
+        embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+        try:
+            dm = discord.Embed(
+                title="📤 Aviso de Desligamento",
+                description=f"Você foi removido(a) do cargo **{cargo.name}** em **{interaction.guild.name}**.",
+                color=discord.Color.red(),
+                timestamp=datetime.now()
+            )
+            dm.add_field(name="👮 Responsável:", value=interaction.user.name, inline=False)
+            await self.usuario_selecionado.send(embed=dm)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+
 class StaffPanelView(ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -114,6 +198,21 @@ class StaffPanelView(ui.View):
             color=discord.Color.blurple()
         )
         await interaction.response.send_message(embed=embed, view=ContratarStaffView(), ephemeral=True)
+
+    @ui.button(label="Demitir Staff", style=discord.ButtonStyle.danger, emoji="📤", custom_id="staff_panel:demitir")
+    async def demitir(self, interaction: discord.Interaction, button: ui.Button):
+        if not interaction.user.guild_permissions.manage_roles:
+            return await interaction.response.send_message(
+                "❌ Você precisa da permissão **Gerenciar Cargos** para demitir staff.",
+                ephemeral=True
+            )
+
+        embed = discord.Embed(
+            title="📤 Demissão de Staff",
+            description="Selecione o **usuário** e o **cargo** que deseja remover, depois clique em **Confirmar Demissão**.",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed, view=DemitirStaffView(), ephemeral=True)
 
 
 class StaffPanel(commands.Cog):

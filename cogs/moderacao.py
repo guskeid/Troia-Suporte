@@ -15,6 +15,19 @@ CARGOS_HIERARQUIA = [
     "Troia | Equipe"
 ]
 
+# Canal onde os logs de moderação serão enviados
+ID_CANAL_LOG_MODERACAO = 1496640878062600212
+
+
+async def enviar_log_moderacao(interaction: discord.Interaction, embed: discord.Embed):
+    """Envia o embed de moderação para o canal de logs configurado."""
+    canal = interaction.guild.get_channel(ID_CANAL_LOG_MODERACAO)
+    if canal:
+        try:
+            await canal.send(embed=embed)
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
 class Moderacao(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -62,6 +75,7 @@ class Moderacao(commands.Cog):
             embed = self.criar_embed_mod("🔨 Usuário Banido", discord.Color.red(), usuario, interaction.user, motivo)
             await usuario.ban(reason=motivo)
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao processar banimento: {e}", ephemeral=True)
 
@@ -75,6 +89,7 @@ class Moderacao(commands.Cog):
             embed = self.criar_embed_mod("👢 Usuário Expulso", discord.Color.orange(), usuario, interaction.user, motivo)
             await usuario.kick(reason=motivo)
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao expulsar: {e}", ephemeral=True)
 
@@ -90,6 +105,7 @@ class Moderacao(commands.Cog):
             
             embed = self.criar_embed_mod("🔇 Usuário Silenciado", discord.Color.gold(), usuario, interaction.user, motivo, "⏳ Duração:", f"{minutos} minuto(s)")
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao aplicar silenciamento: {e}", ephemeral=True)
 
@@ -99,6 +115,12 @@ class Moderacao(commands.Cog):
         try:
             await usuario.timeout(None)
             await interaction.response.send_message(f"✅ O silenciamento de {usuario.mention} foi revogado.", ephemeral=True)
+
+            embed = discord.Embed(title="🔊 Silenciamento Revogado", color=discord.Color.green(), timestamp=datetime.now())
+            embed.add_field(name="👤 Usuário:", value=f"{usuario.mention} (`{usuario.id}`)", inline=False)
+            embed.add_field(name="👮 Responsável:", value=interaction.user.mention, inline=False)
+            embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao remover silenciamento: {e}", ephemeral=True)
 
@@ -112,6 +134,13 @@ class Moderacao(commands.Cog):
         try:
             deletadas = await interaction.channel.purge(limit=quantidade)
             await interaction.followup.send(f"🧹 Foram removidas `{len(deletadas)}` mensagens.", ephemeral=True)
+
+            embed = discord.Embed(title="🧹 Mensagens Removidas", color=discord.Color.light_grey(), timestamp=datetime.now())
+            embed.add_field(name="📁 Canal:", value=interaction.channel.mention, inline=False)
+            embed.add_field(name="📊 Quantidade:", value=f"`{len(deletadas)}` mensagens", inline=True)
+            embed.add_field(name="👮 Responsável:", value=interaction.user.mention, inline=True)
+            embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.followup.send(f"❌ Erro ao limpar mensagens: {e}", ephemeral=True)
 
@@ -143,6 +172,7 @@ class Moderacao(commands.Cog):
             embed.add_field(name="📬 DM:", value="Não foi possível notificar o usuário por mensagem direta.", inline=False)
 
         await interaction.response.send_message(embed=embed)
+        await enviar_log_moderacao(interaction, embed)
 
     @app_commands.command(name="desbanir", description="Remove o banimento de um usuário pelo ID.")
     @app_commands.checks.has_permissions(ban_members=True)
@@ -166,6 +196,7 @@ class Moderacao(commands.Cog):
             embed.add_field(name="📝 Motivo:", value=motivo, inline=False)
             embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except discord.NotFound:
             await interaction.response.send_message("❌ Este usuário não está banido ou não existe.", ephemeral=True)
         except Exception as e:
@@ -183,6 +214,13 @@ class Moderacao(commands.Cog):
                 await interaction.response.send_message("✅ Modo lento **desativado** neste canal.")
             else:
                 await interaction.response.send_message(f"🐢 Modo lento definido para **{segundos} segundo(s)** neste canal.")
+
+            embed = discord.Embed(title="🐢 Slowmode Alterado", color=discord.Color.teal(), timestamp=datetime.now())
+            embed.add_field(name="📁 Canal:", value=interaction.channel.mention, inline=False)
+            embed.add_field(name="⏱️ Novo valor:", value=f"`{segundos}` segundo(s)" if segundos > 0 else "Desativado", inline=True)
+            embed.add_field(name="👮 Responsável:", value=interaction.user.mention, inline=True)
+            embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao alterar o modo lento: {e}", ephemeral=True)
 
@@ -205,6 +243,7 @@ class Moderacao(commands.Cog):
             embed.add_field(name="📝 Motivo:", value=motivo, inline=False)
             embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao bloquear o canal: {e}", ephemeral=True)
 
@@ -226,6 +265,7 @@ class Moderacao(commands.Cog):
             embed.add_field(name="👮 Responsável:", value=interaction.user.mention, inline=False)
             embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Erro ao desbloquear o canal: {e}", ephemeral=True)
 
@@ -253,6 +293,7 @@ class Moderacao(commands.Cog):
             embed.add_field(name="👮 Responsável:", value=interaction.user.mention, inline=False)
             embed.set_footer(text="Troia Roleplay - Sistema de Gestão")
             await interaction.response.send_message(embed=embed)
+            await enviar_log_moderacao(interaction, embed)
         except discord.Forbidden:
             await interaction.response.send_message("❌ Não tenho permissão para alterar o apelido deste usuário.", ephemeral=True)
         except Exception as e:
