@@ -23,12 +23,14 @@ class MyBot(commands.Bot):
         from cogs.tickets import TicketView, ConfirmCloseView
         from cogs.whitelist import WhitelistView
         from cogs.verificacao import VerificacaoView
+        from cogs.painel_staff import StaffPanelView
         
         # Adicionar Views persistentes (para os botões não pararem de funcionar)
         self.add_view(TicketView(self))
         self.add_view(ConfirmCloseView(self))
         self.add_view(WhitelistView())
         self.add_view(VerificacaoView())
+        self.add_view(StaffPanelView())
         
         await self.tree.sync()
         print("✅ Comandos de barra sincronizados.")
